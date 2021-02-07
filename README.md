@@ -147,11 +147,12 @@ Will build an XCode project by a predefined xml file.
 ```
 
 After your created the xml file, call it from code, to build your XCode project.
-
-    from os_ios_app_automation import app_automation as xm
+```python
+from os_ios_app_automation import app_automation as xm
  
-    xm.set_xcode_project_by_xml('/path/to/your/xml_file.xml',
+xm.set_xcode_project_by_xml('/path/to/your/xml_file.xml',
                                 place_holder_map = {'$app_path': '/path/to/a/dynamic/directory'})
+```
 
 ## Advanced usage
 
