@@ -11,8 +11,8 @@ from os_ios_app_automation.bp import _res as res
 def manipulate(xml_path, xml, place_holder_map):
     from os_xcode_tools import xcode_project_manipulator as xpm
     root_node = xh.get_root_node(xml)
-    shared_tools.add_extension_nodes(xml_path, place_holder_map, root_node, xml)
-    # xh.save_xml_file(xml, '/Users/home/Programming/Python/modules/general/os_file_automation/examples/xcode_mapper2.xml')
+    xml = shared_tools.add_extension_nodes(xml_path, place_holder_map, root_node, xml)
+    root_node = xh.get_root_node(xml)
     project_properties_node = xh.get_child_nodes(root_node, 'project_properties')[0]
 
     # fetch the project properties
@@ -104,8 +104,13 @@ def run_next_step_cycle(project, root_node, xml_path, place_holder_map, curr_ste
             elif curr_step_tag == res.NODE_FRAMEWORKS:
                 do_frameworks_tag(project, place_holder_map, curr_step_child_node)
 
+            # if text changing
             elif curr_step_tag == res.NODE_RUN_TEXT_MAPPER:
                 do_run_text_mapper_tag(xml_path, place_holder_map, curr_step_child_node)
+
+            # if file changing
+            elif curr_step_tag == res.NODE_RUN_FILE_MAPPER:
+                do_run_file_mapper_tag(xml_path, place_holder_map, curr_step_child_node)
 
         print('done!')
         run_next_step_cycle(project, root_node, xml_path, place_holder_map, curr_step + 1)
@@ -159,7 +164,6 @@ def do_link_tag(project, xml_path, place_holder_map, link_node):
 
 # will operate the <pods> tag
 def do_pods_tag(project, place_holder_map, pods_node):
-
     # find the pod file
     from os_xcode_tools import xcode_project_manipulator as xpm
     project_path = xpm.get_project_root(project)
@@ -218,9 +222,23 @@ def do_frameworks_tag(project, place_holder_map, frameworks_node):
 
 # will operate the <run_text_mapper> tag
 def do_run_text_mapper_tag(xml_path, place_holder_map, curr_step_child_node):
-    req_place_holder_map = xh.get_child_nodes(curr_step_child_node, res.NODE_PLACE_HOLDER_MAP)
-
     # if a dictionary exists in the xml, build it in code
+    text_mapper_place_holder_map = _fill_and_build_place_holder_map(place_holder_map, curr_step_child_node)
+    src_path = shared_tools.get_file_node_path(xml_path, place_holder_map, curr_step_child_node, shared_res.NODE_FILE_SRC, file_search=True)
+    from os_xml_automation import xml_automation as xm
+    xm.set_texts_by_xml(src_path, text_mapper_place_holder_map)
+
+
+# will operate the <run_file_mapper> tag
+def do_run_file_mapper_tag(xml_path, place_holder_map, curr_step_child_node):
+    file_mapper_place_holder_map = _fill_and_build_place_holder_map(place_holder_map, curr_step_child_node)
+    src_path = shared_tools.get_file_node_path(xml_path, place_holder_map, curr_step_child_node, shared_res.NODE_FILE_SRC, file_search=True)
+    from os_xml_automation import xml_automation as xm
+    xm.manipulate_files_by_xml(src_path, file_mapper_place_holder_map)
+
+
+def _fill_and_build_place_holder_map(place_holder_map, curr_step_child_node):
+    req_place_holder_map = xh.get_child_nodes(curr_step_child_node, res.NODE_PLACE_HOLDER_MAP)
     text_mapper_place_holder_map = None
     if req_place_holder_map:
         text_mapper_place_holder_map = {}
@@ -230,11 +248,7 @@ def do_run_text_mapper_tag(xml_path, place_holder_map, curr_step_child_node):
             val = xh.get_text_from_child_node(arg, res.NODE_VALUE)
             val = shared_tools.fill_place_holders(val, place_holder_map)
             text_mapper_place_holder_map[key] = val
-
-    src_path = shared_tools.get_file_node_path(xml_path, place_holder_map, curr_step_child_node, shared_res.NODE_FILE_SRC, file_search=True)
-    from os_xml_automation import xml_automation as xm
-    xm.set_texts_by_xml(src_path, text_mapper_place_holder_map)
-
+    return text_mapper_place_holder_map
 
 def print_line():
     print('-----------------------------------------------------------------------')
